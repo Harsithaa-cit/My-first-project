@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Trendora – Discover What's Trending</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;font-family:Inter,system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial;}
+  body{background:#f7f8fc;color:#222;line-height:1.4;min-height:100vh;}
+  a{color:inherit}
+
+  /* Header */
+  header{
+    background:#fff;
+    box-shadow:0 2px 8px rgba(0,0,0,0.06);
+    position:sticky;top:0;z-index:100;
+    display:flex;align-items:center;justify-content:space-between;
+    gap:16px;padding:12px 28px;
+  }
+  .logo{font-size:22px;font-weight:700;color:#ff0066;}
+  .search-box{flex:1;max-width:640px;position:relative;margin:0 12px;}
+  .search-box input{
+    width:100%;padding:10px 40px;border-radius:20px;border:1px solid #e0e0e0;font-size:15px;background:#fafafa;
+  }
+  .search-box i{position:absolute;top:10px;left:14px;color:#9aa3ad;font-size:14px;}
+  nav ul{display:flex;gap:18px;list-style:none;align-items:center;}
+  nav a{text-decoration:none;color:#333;font-weight:500;font-size:14px;padding:6px 8px;border-radius:6px;}
+  nav a:hover{background:#fff0f5;color:#ff0066;}
+  .cart{position:relative;cursor:pointer;font-size:20px;color:#ff0066;}
+  #cart-count{position:absolute;top:-8px;right:-8px;background:#ff0055;color:white;font-size:11px;padding:3px 6px;border-radius:50%;}
+
+  /* Hero */
+  #home{
+    background:url('https://m.media-amazon.com/images/S/al-eu-726f4d26-7fdb/b67c96ba-a9b1-42fa-9dce-54a7f7a93d22.png') center/cover no-repeat;
+    color:white;text-align:center;padding:110px 20px;position:relative;
+  }
+  #home::after{content:"";position:absolute;inset:0;background:rgba(0,0,0,0.4);}
+  #home h1,#home p{position:relative;z-index:2;}
+  #home h1{font-size:44px;margin-bottom:8px;letter-spacing:0.2px;}
+  #home p{font-size:18px;opacity:0.98;}
+
+  /* Products */
+  section{padding:46px 36px;}
+  h2{text-align:center;margin-bottom:18px;font-size:22px;}
+  .filter-bar{text-align:center;margin-bottom:22px;}
+  .filter-bar select{padding:10px;border-radius:8px;border:1px solid #e0e0e0;background:#fff;}
+  .products{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:22px;}
+  .product{background:#fff;border-radius:12px;box-shadow:0 6px 18px rgba(16,24,40,0.06);overflow:hidden;text-align:center;padding-bottom:12px;transition:transform .22s;}
+  .product:hover{transform:translateY(-6px)}
+  .product img{width:100%;height:180px;object-fit:cover;border-bottom:1px solid #f1f1f1;}
+  .product h3{font-size:16px;margin:12px 10px 6px;}
+  .price{color:#ff0066;font-weight:700;margin-bottom:8px;}
+  .btn{background:#ff0066;color:white;padding:10px 12px;border:none;border-radius:8px;cursor:pointer;font-weight:600;width:85%;max-width:220px;margin:6px auto;display:block;}
+  .btn.small{padding:8px 10px;width:auto;}
+
+  /* About & Contact lists */
+  ul{list-style:disc;margin-left:28px;max-width:720px;margin:auto;}
+  p.lead{max-width:780px;margin:0 auto;color:#444;text-align:center;}
+
+  /* Footer */
+  footer{background:#ff0066;color:#fff;text-align:center;padding:18px 14px;margin-top:28px;border-top-left-radius:6px;border-top-right-radius:6px;}
+
+  /* Modal base */
+  .modal{
+    display:none;position:fixed;inset:0;background:rgba(2,6,23,0.45);
+    justify-content:center;align-items:center;z-index:3000;padding:20px;
+  }
+  .modal.active{display:flex}
+  .modal-content{
+    width:100%;max-width:420px;background:#fff;border-radius:12px;padding:20px 22px;box-shadow:0 12px 40px rgba(2,6,23,0.2);
+  }
+  .modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+  .modal-header h3{font-size:18px;}
+  .close{background:transparent;border:none;font-size:20px;cursor:pointer;color:#e03b63}
+
+  /* Form styles */
+  .form-row{display:flex;flex-direction:column;gap:8px;margin-bottom:12px;}
+  label{font-size:13px;color:#333;font-weight:600;}
+  .input{
+    width:100%;padding:10px 12px;border-radius:8px;border:1px solid #e6e6e6;font-size:14px;background:#fafafa;
+  }
+  .input:focus{outline:none;border-color:#ff7aa6;box-shadow:0 0 0 4px rgba(255,0,102,0.06);}
+  .helper{font-size:12px;color:#666;margin-top:6px;}
+  .error{color:#c62828;font-size:13px;margin-top:6px;display:none;}
+
+  /* Modal button full-width */
+  .modal .btn{width:100%;max-width:100%;margin:8px 0 0 0;border-radius:8px;padding:11px 12px;font-size:15px;}
+
+  /* small screens */
+  @media (max-width:520px){
+    header{padding:10px;}
+    .search-box{max-width:unset}
+    #home{padding:80px 14px}
+    .modal-content{padding:16px}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Trendora ✨</div>
+
+  <div class="search-box" role="search">
+    <i>🔍</i>
+    <input id="search" type="search" placeholder="Search for products..." onkeyup="searchProducts()" aria-label="Search products">
+  </div>
+
+  <nav>
+    <ul>
+      <li><a href="#home">Home</a></li>
+      <li><a href="#products">Products</a></li>
+      <li><a href="#about">About</a></li>
+      <li><a href="#contact">Contact</a></li>
+      <li><a href="#" onclick="openModal('loginModal');return false;">Login</a></li>
+      <li><a href="#" onclick="openModal('registerModal');return false;">Register</a></li>
+      <li><div class="cart" aria-live="polite">🛍 <span id="cart-count">0</span></div></li>
+    </ul>
+  </nav>
+</header>
+
+<section id="home" aria-label="Home banner">
+  
+</section>
+
+<section id="products">
+  <h2>Featured Products</h2>
+  <div class="filter-bar">
+    <select id="filter" onchange="filterCategory()">
+      <option value="all">All Categories</option>
+      <option value="electronics">Electronics</option>
+      <option value="fashion">Fashion</option>
+      <option value="accessories">Accessories</option>
+    </select>
+  </div>
+
+  <div class="products" id="product-list">
+    <div class="product" data-category="electronics">
+      <img src="https://m-cdn.phonearena.com/images/phones/81023-940/Nokia-8-V-5G-UW.jpg?w=1" alt="Smartphone" width="300" height="200">
+      <h3>Smartphone</h3>
+      <p class="price">₹25,000</p>
+      <button class="btn" onclick="addToCart()">Add to Cart</button>
+    </div>
+
+    <div class="product" data-category="electronics">
+      <img src="https://tse3.mm.bing.net/th/id/OIP.TmdVZty6FfKab0vUeFwvaAHaEm?cb=ucfimg2ucfimg=1&rs=1&pid=ImgDetMain&o=7&rm=3" alt="Laptop">
+      <h3>Laptop</h3>
+      <p class="price">₹55,000</p>
+      <button class="btn" onclick="addToCart()">Add to Cart</button>
+    </div>
+
+    <div class="product" data-category="fashion">
+      <img src="https://images.opumo.com/wordpress/wp-content/uploads/2024/07/Layer-7-18.png" alt="T-Shirt">
+      <h3>Men's T-Shirt</h3>
+      <p class="price">₹699</p>
+      <button class="btn" onclick="addToCart()">Add to Cart</button>
+    </div>
+
+    <div class="product" data-category="accessories">
+      <img src="https://m.media-amazon.com/images/I/61ZjlBOp+rL.jpg" alt="Smart Watch">
+      <h3>Smart Watch</h3>
+      <p class="price">₹3,999</p>
+      <button class="btn" onclick="addToCart()">Add to Cart</button>
+    </div>
+    <!-- Wireless Earbuds -->
+<div class="product" data-category="electronics">
+  <img src="https://m.media-amazon.com/images/I/61kFL7ywsZS.SL1500.jpg" alt="Wireless Earbuds">
+  <h3>Wireless Earbuds</h3>
+  <p class="price">₹1,299</p>
+  <button class="btn" onclick="addToCart()">Add to Cart</button>
+</div>
+
+<!-- Bluetooth Speaker -->
+<div class="product" data-category="electronics">
+  <img src="https://tse1.mm.bing.net/th/id/OIP.gsvHqn93KK1XGV6SVU1_zwHaHa?cb=ucfimg2ucfimg=1&rs=1&pid=ImgDetMain&o=7&rm=3" alt="Bluetooth Speaker" width="300" height="200">
+  <h3>Portable Bluetooth Speaker</h3>
+  <p class="price">₹2,499</p>
+  <button class="btn" onclick="addToCart()">Add to Cart</button>
+</div>
+
+<!-- Women's Handbag -->
+<div class="product" data-category="fashion">
+  <img src="https://tse3.mm.bing.net/th/id/OIP.73ClGYHGReevkne1_hVF7AAAAA?cb=ucfimg2ucfimg=1&rs=1&pid=ImgDetMain&o=7&rm=3" alt="Handbag">
+  <h3>Women's Stylish Handbag</h3>
+  <p class="price">₹1,099</p>
+  <button class="btn" onclick="addToCart()">Add to Cart</button>
+</div>
+
+<!-- Sports Shoes -->
+<div class="product" data-category="fashion">
+  <img src="https://img.tatacliq.com/images/i11/437Wx649H/MP000000018075770_437Wx649H_202306230215251.jpeg" alt="Sports Shoes">
+  <h3>Men’s Running Shoes</h3>
+  <p class="price">₹1,899</p>
+  <button class="btn" onclick="addToCart()">Add to Cart</button>
+</div>
+
+<!-- Sunglasses -->
+<div class="product" data-category="accessories">
+  <img src="https://img.freepik.com/premium-photo/blue-sunglasses-beach-sand-style-reflex-reflections_921860-64407.jpg" alt="Sunglasses">
+  <h3>UV Protection Sunglasses</h3>
+  <p class="price">₹799</p>
+  <button class="btn" onclick="addToCart()">Add to Cart</button>
+</div>
+
+<!-- Backpack -->
+<div class="product" data-category="accessories">
+  <img src="https://tse1.mm.bing.net/th/id/OIP.U7hBOsU5N4q3IuyTJKeT8gHaG8?cb=ucfimg2ucfimg=1&w=650&h=609&rs=1&pid=ImgDetMain&o=7&rm=3" alt="Backpack">
+  <h3>Casual Travel Backpack</h3>
+  <p class="price">₹1,499</p>
+  <button class="btn" onclick="addToCart()">Add to Cart</button>
+</div>
+
+<!-- Smart TV -->
+<div class="product" data-category="electronics">
+  <img src="https://tse1.mm.bing.net/th/id/OIP.u10XKPhTk59nswaOskJS0AHaE8?cb=ucfimg2ucfimg=1&rs=1&pid=ImgDetMain&o=7&rm=3" alt="Smart TV">
+  <h3>32-inch Smart LED TV</h3>
+  <p class="price">₹14,999</p>
+  <button class="btn" onclick="addToCart()">Add to Cart</button>
+</div>
+
+<!-- Hoodie -->
+<div class="product" data-category="fashion">
+  <img src="https://tse2.mm.bing.net/th/id/OIP.26lIcmEVm6-k3SEXQskgrQHaHk?cb=ucfimg2ucfimg=1&rs=1&pid=ImgDetMain&o=7&rm=3" alt="Hoodie">
+  <h3>Unisex Winter Hoodie</h3>
+  <p class="price">₹999</p>
+  <button class="btn" onclick="addToCart()">Add to Cart</button>
+</div>
+
+<div class="product" data-category="accessories">
+  <img src="https://tse1.mm.bing.net/th/id/OIP.4_iux3nN0TYsYYY9aalXawHaHa?cb=ucfimg2ucfimg=1&rs=1&pid=ImgDetMain&o=7&rm=3" alt="Earrings">
+  <h3>Earrings</h3>
+  <p class="price">₹500</p>
+  <button class="btn" onclick="addToCart()">Add to Cart</button>
+</div>
+<div class="product" data-category="fashion">
+  <img src="https://i.etsystatic.com/24643309/r/il/53d041/3229375443/il_1080xN.3229375443_rcwz.jpg" alt="Lehenga">
+  <h3>Lehenga</h3>
+  <p class="price">₹2000</p>
+  <button class="btn" onclick="addToCart()">Add to Cart</button>
+</div>
+<div class="product" data-category="fashion">
+  <img src="https://tse1.mm.bing.net/th/id/OIP.2xPeFCsYvIcg5o7eCT7aIAHaHa?cb=ucfimg2ucfimg=1&rs=1&pid=ImgDetMain&o=7&rm=3" alt="Salwar">
+  <h3>Salwar</h3>
+  <p class="price">₹1400</p>
+  <button class="btn" onclick="addToCart()">Add to Cart</button>
+</div>
+</div>
+</section>
+
+<section id="about">
+  <h2>About Trendora</h2>
+  <p class="lead">
+    Trendora is a curated marketplace for modern shoppers 🛍️— we bring together trending fashion, smart electronics,
+    and everyday accessories in one polished store. Our promise: genuine products, quick delivery 📦 and customer-first service.
+  </p>
+</section>
+
+<section id="contact">
+  <h2>Contact Us</h2>
+  <ul>
+    <li><strong>Email:</strong> care@trendora.in📧</li>
+    <li><strong>Phone:</strong> +91 96254 32109📞</li>
+    <li><strong>Address:</strong> Trendora Pvt. Ltd., Teynampet, Chennai, India📍</li>
+    <li><strong>Hours:</strong> Mon–Sat, 9:00 AM – 7:00 PM</li>
+  </ul>
+</section>
+
+<footer>
+  © 2025 Trendora. All Rights Reserved.
+</footer>
+
+<!-- LOGIN MODAL -->
+<div id="loginModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+  <div class="modal-content" role="document">
+    <div class="modal-header">
+      <h3 id="loginTitle">Login to Trendora</h3>
+      <button class="close" onclick="closeModal('loginModal')" aria-label="Close login form">&times;</button>
+    </div>
+
+    <form id="loginForm" onsubmit="return validateLogin(event)" novalidate>
+      <div class="form-row">
+        <label for="loginEmail">Email</label>
+        <input id="loginEmail" class="input" type="email" placeholder="you@example.com" required autofocus>
+      </div>
+
+      <div class="form-row">
+        <label for="loginPassword">Password</label>
+        <input id="loginPassword" class="input" type="password" placeholder="Enter your password" required>
+      </div>
+
+      <div id="loginError" class="error" role="alert"></div>
+
+      <button type="submit" class="btn">Login</button>
+
+      <p style="text-align:center;margin-top:10px;font-size:13px;color:#666;">
+        New here? <a href="#" onclick="closeModal('loginModal');openModal('registerModal');return false;">Create account</a>
+      </p>
+    </form>
+  </div>
+</div>
+
+<!-- REGISTER MODAL -->
+<div id="registerModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="registerTitle">
+  <div class="modal-content" role="document">
+    <div class="modal-header">
+      <h3 id="registerTitle">Create your account</h3>
+      <button class="close" onclick="closeModal('registerModal')" aria-label="Close register form">&times;</button>
+    </div>
+
+    <form id="registerForm" onsubmit="return validateRegister(event)" novalidate>
+      <div class="form-row">
+        <label for="regName">Full name</label>
+        <input id="regName" class="input" type="text" placeholder="Your full name" required>
+      </div>
+
+      <div class="form-row">
+        <label for="regEmail">Email</label>
+        <input id="regEmail" class="input" type="email" placeholder="you@example.com" required>
+      </div>
+
+      <div class="form-row">
+        <label for="regPassword">Password</label>
+        <input id="regPassword" class="input" type="password" placeholder="Choose a password (min 6 chars)" required>
+      </div>
+
+      <div class="form-row">
+        <label for="regConfirm">Confirm Password</label>
+        <input id="regConfirm" class="input" type="password" placeholder="Repeat your password" required>
+      </div>
+
+      <div id="registerError" class="error" role="alert"></div>
+
+      <button type="submit" class="btn">Create Account</button>
+
+      <p style="text-align:center;margin-top:10px;font-size:13px;color:#666;">
+        Already have an account? <a href="#" onclick="closeModal('registerModal');openModal('loginModal');return false;">Login</a>
+      </p>
+    </form>
+  </div>
+</div>
+
+<script>
+  // Simple cart counter
+  let cartCount = 0;
+  function addToCart(){
+    cartCount++;
+    document.getElementById('cart-count').innerText = cartCount;
+  }
+
+  // Modal helpers
+  function openModal(id){
+    const m = document.getElementById(id);
+    if(!m) return;
+    m.classList.add('active');
+
+    // focus first input for convenience
+    const firstInput = m.querySelector('input');
+    if(firstInput) firstInput.focus();
+  }
+  function closeModal(id){
+    const m = document.getElementById(id);
+    if(!m) return;
+    m.classList.remove('active');
+
+    // clear any errors
+    const err = m.querySelector('.error');
+    if(err) err.style.display = 'none';
+  }
+
+  // close when clicking backdrop
+  window.addEventListener('click', function(e){
+    if(e.target.classList && e.target.classList.contains('modal')){
+      e.target.classList.remove('active');
+    }
+  });
+
+  // Prevent pressing Escape from leaving you confused: close modal on ESC
+  window.addEventListener('keydown', function(e){
+    if(e.key === 'Escape'){
+      document.querySelectorAll('.modal.active').forEach(m => m.classList.remove('active'));
+    }
+  });
+
+  // Form validations
+  function validateLogin(event){
+    event.preventDefault();
+    const email = document.getElementById('loginEmail').value.trim();
+    const pass  = document.getElementById('loginPassword').value;
+
+    const err = document.getElementById('loginError');
+    err.style.display = 'none';
+    err.innerText = '';
+
+    if(!email || !pass){
+      err.innerText = 'Please fill in both email and password.';
+      err.style.display = 'block';
+      return false;
+    }
+    // Basic email format check
+    if(!/^\S+@\S+\.\S+$/.test(email)){
+      err.innerText = 'Please enter a valid email address.';
+      err.style.display = 'block';
+      return false;
+    }
+
+    // Simulate success (replace with real auth later)
+    alert('Login successful — welcome back!');
+    closeModal('loginModal');
+    return false;
+  }
+
+  function validateRegister(event){
+    event.preventDefault();
+    const name = document.getElementById('regName').value.trim();
+    const email = document.getElementById('regEmail').value.trim();
+    const pass = document.getElementById('regPassword').value;
+    const confirm = document.getElementById('regConfirm').value;
+
+    const err = document.getElementById('registerError');
+    err.style.display = 'none';
+    err.innerText = '';
+
+    if(!name || !email || !pass || !confirm){
+      err.innerText = 'All fields are required.';
+      err.style.display = 'block';
+      return false;
+    }
+    if(!/^\S+@\S+\.\S+$/.test(email)){
+      err.innerText = 'Please enter a valid email address.';
+      err.style.display = 'block';
+      return false;
+    }
+    if(pass.length < 6){
+      err.innerText = 'Password must be at least 6 characters.';
+      err.style.display = 'block';
+      return false;
+    }
+    if(pass !== confirm){
+      err.innerText = 'Passwords do not match.';
+      err.style.display = 'block';
+      return false;
+    }
+
+    // Simulate registration success
+    alert('Account created successfully! You can now log in.');
+    closeModal('registerModal');
+    openModal('loginModal');
+    return false;
+  }
+
+  // Search and filter
+  function searchProducts(){
+    const q = document.getElementById('search').value.trim().toLowerCase();
+    document.querySelectorAll('.product').forEach(p => {
+      const txt = p.querySelector('h3').innerText.toLowerCase();
+      p.style.display = txt.includes(q) ? '' : 'none';
+    });
+  }
+  function filterCategory(){
+    const cat = document.getElementById('filter').value;
+    document.querySelectorAll('.product').forEach(p => {
+      p.style.display = (cat === 'all' || p.dataset.category === cat) ? '' : 'none';
+    });
+  }
+</script>
+</body>
+</html>
